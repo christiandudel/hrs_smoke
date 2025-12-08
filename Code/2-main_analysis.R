@@ -33,8 +33,12 @@
   
 ### Define dtms ################################################################  
 
-  hrsdtms <- dtms(transient=c("working/healthy","not working/healthy",
-                              "working/unhealthy","not working/unhealthy"),
+  # Transient states
+  transientstates <- c("working/healthy","not working/healthy",
+                       "working/unhealthy","not working/unhealthy")
+  
+  # dtms
+  hrsdtms <- dtms(transient=transientstates,
                   absorbing="dead",
                   timescale=seq(50,98,1),
                   timestep=1:3)
@@ -50,221 +54,421 @@
                          steplength=TRUE)
   
   
+### Cleaning ###################################################################  
+  
+  estdata <- dtms_clean(data=estdata,
+                        dtms=hrsdtms)
+  
+  
+### Edit variables #############################################################
+  
+  estdata$time2 <- estdata$time^2
+  estdata$smoke <- as.factor(estdata$smoke)
+  estdata$education <- as.factor(estdata$education)
+  
+  
+### Sample splits ##############################################################
+  
+  # Gender
+  estdata_m <- estdata |> filter(gender==0)
+  estdata_w <- estdata |> filter(gender==1)
+  
+  # Gender & race/ethnicity
+  estdata_w_m <- estdata |> filter(race=="White" & gender==0)
+  estdata_w_w <- estdata |> filter(race=="White" & gender==1)
+  estdata_b_m <- estdata |> filter(race=="Black" & gender==0)
+  estdata_b_w <- estdata |> filter(race=="Black" & gender==1)
+  estdata_h_m <- estdata |> filter(race=="Hispan" & gender==0)
+  estdata_h_w <- estdata |> filter(race=="Hispan" & gender==1)
+  
+  
+### Fit models #################################################################  
+  
+  # Controls w/o education
+  convar <- c("smoke","time","time2",
+              "dum65","dum66","dum67",
+              "steplength")
+  
+  # Controls with education
+  convaredu <- c("smoke","education","time","time2",
+                 "dum65","dum66","dum67",
+                 "steplength")
+  
+  # Basic models without education and race/ethnicity
+  fit <- dtms_fit(data=estdata,controls=convar)
+  fit_m <- dtms_fit(data=estdata_m,controls=convar)
+  fit_w<- dtms_fit(data=estdata_w,controls=convar)
+  
+  # Models + education + race/ethnicity 
+  fit_w_m <- dtms_fit(data=estdata_w_m,controls=convaredu)
+  fit_w_w <- dtms_fit(data=estdata_w_w,controls=convaredu)
+  fit_b_m <- dtms_fit(data=estdata_b_m,controls=convaredu)
+  fit_b_w <- dtms_fit(data=estdata_b_w,controls=convaredu)
+  fit_h_m <- dtms_fit(data=estdata_h_m,controls=convaredu)
+  fit_h_w <- dtms_fit(data=estdata_h_w,controls=convaredu)
+  
+  
+### Values for prediction ######################################################
+  
+  # Timescale
+  timescale <- seq(50,98,2)
+  
+  # dtms
+  hrspredict <- dtms(transient=transientstates,
+                     absorbing="dead",
+                     timescale=timescale)
+  
+  # Timescale, steplength
+  reused <- list(time=timescale,
+                 time2=timescale^2,
+                 dum65=ifelse(timescale==65,1,0),
+                 dum66=ifelse(timescale==66,1,0),
+                 dum67=ifelse(timescale>=67,1,0),
+                 steplength=2)
+  
+  # Plus smoking status
+  smoke0 <- list(smoke=factor("0",levels=c("0","1","2")))
+  smoke1 <- list(smoke=factor("1",levels=c("0","1","2")))
+  smoke2 <- list(smoke=factor("2",levels=c("0","1","2")))
+  
+  reused_ns <- c(smoke0,reused) # Never
+  reused_ex <- c(smoke1,reused) # Former
+  reused_sm <- c(smoke2,reused) # Current
+  
+  # Plus education
+  edu0 <- list(education=factor("0",levels=c("0","1","2")))
+  edu1 <- list(education=factor("1",levels=c("0","1","2")))
+  edu2 <- list(education=factor("2",levels=c("0","1","2")))
+  
+  reused_ns_0 <- c(edu0,reused_ns)
+  reused_ns_1 <- c(edu1,reused_ns)
+  reused_ns_2 <- c(edu2,reused_ns)
+  
+  reused_ex_0 <- c(edu0,reused_ex)
+  reused_ex_1 <- c(edu1,reused_ex)
+  reused_ex_2 <- c(edu2,reused_ex)
+
+  reused_sm_0 <- c(edu0,reused_sm)
+  reused_sm_1 <- c(edu1,reused_sm)
+  reused_sm_2 <- c(edu2,reused_sm)
+  
+  
+### Predict probabilities ######################################################
+  
+  # Probabilities: full sample 
+  probs_ns <- dtms_transitions(model=fit,dtms=hrspredict,controls=reused_ns)
+  probs_ex <- dtms_transitions(model=fit,dtms=hrspredict,controls=reused_ex)
+  probs_sm <- dtms_transitions(model=fit,dtms=hrspredict,controls=reused_sm)
+  
+  # Probabilities: gender
+  probs_m_ns <- dtms_transitions(model=fit_m,dtms=hrspredict,controls=reused_ns)
+  probs_m_ex <- dtms_transitions(model=fit_m,dtms=hrspredict,controls=reused_ex)
+  probs_m_sm <- dtms_transitions(model=fit_m,dtms=hrspredict,controls=reused_sm)
+  probs_w_ns <- dtms_transitions(model=fit_w,dtms=hrspredict,controls=reused_ns)
+  probs_w_ex <- dtms_transitions(model=fit_w,dtms=hrspredict,controls=reused_ex)
+  probs_w_sm <- dtms_transitions(model=fit_w,dtms=hrspredict,controls=reused_sm)
+  
+  # Probabilities: gender + race/ethnicity + education
+  probs_w_m_0_ns <- dtms_transitions(model=fit_w_m,dtms=hrspredict,controls=reused_ns_0)
+  probs_w_m_0_ex <- dtms_transitions(model=fit_w_m,dtms=hrspredict,controls=reused_ex_0)
+  probs_w_m_0_sm <- dtms_transitions(model=fit_w_m,dtms=hrspredict,controls=reused_sm_0)
+  probs_w_m_1_ns <- dtms_transitions(model=fit_w_m,dtms=hrspredict,controls=reused_ns_1)
+  probs_w_m_1_ex <- dtms_transitions(model=fit_w_m,dtms=hrspredict,controls=reused_ex_1)
+  probs_w_m_1_sm <- dtms_transitions(model=fit_w_m,dtms=hrspredict,controls=reused_sm_1)
+  probs_w_m_2_ns <- dtms_transitions(model=fit_w_m,dtms=hrspredict,controls=reused_ns_2)
+  probs_w_m_2_ex <- dtms_transitions(model=fit_w_m,dtms=hrspredict,controls=reused_ex_2)
+  probs_w_m_2_sm <- dtms_transitions(model=fit_w_m,dtms=hrspredict,controls=reused_sm_2)
+  
+  probs_w_w_0_ns <- dtms_transitions(model=fit_w_w,dtms=hrspredict,controls=reused_ns_0)
+  probs_w_w_0_ex <- dtms_transitions(model=fit_w_w,dtms=hrspredict,controls=reused_ex_0)
+  probs_w_w_0_sm <- dtms_transitions(model=fit_w_w,dtms=hrspredict,controls=reused_sm_0)
+  probs_w_w_1_ns <- dtms_transitions(model=fit_w_w,dtms=hrspredict,controls=reused_ns_1)
+  probs_w_w_1_ex <- dtms_transitions(model=fit_w_w,dtms=hrspredict,controls=reused_ex_1)
+  probs_w_w_1_sm <- dtms_transitions(model=fit_w_w,dtms=hrspredict,controls=reused_sm_1)
+  probs_w_w_2_ns <- dtms_transitions(model=fit_w_w,dtms=hrspredict,controls=reused_ns_2)
+  probs_w_w_2_ex <- dtms_transitions(model=fit_w_w,dtms=hrspredict,controls=reused_ex_2)
+  probs_w_w_2_sm <- dtms_transitions(model=fit_w_w,dtms=hrspredict,controls=reused_sm_2)
+  
+  probs_b_m_0_ns <- dtms_transitions(model=fit_b_m,dtms=hrspredict,controls=reused_ns_0)
+  probs_b_m_0_ex <- dtms_transitions(model=fit_b_m,dtms=hrspredict,controls=reused_ex_0)
+  probs_b_m_0_sm <- dtms_transitions(model=fit_b_m,dtms=hrspredict,controls=reused_sm_0)
+  probs_b_m_1_ns <- dtms_transitions(model=fit_b_m,dtms=hrspredict,controls=reused_ns_1)
+  probs_b_m_1_ex <- dtms_transitions(model=fit_b_m,dtms=hrspredict,controls=reused_ex_1)
+  probs_b_m_1_sm <- dtms_transitions(model=fit_b_m,dtms=hrspredict,controls=reused_sm_1)
+  probs_b_m_2_ns <- dtms_transitions(model=fit_b_m,dtms=hrspredict,controls=reused_ns_2)
+  probs_b_m_2_ex <- dtms_transitions(model=fit_b_m,dtms=hrspredict,controls=reused_ex_2)
+  probs_b_m_2_sm <- dtms_transitions(model=fit_b_m,dtms=hrspredict,controls=reused_sm_2)
+  
+  probs_b_w_0_ns <- dtms_transitions(model=fit_b_w,dtms=hrspredict,controls=reused_ns_0)
+  probs_b_w_0_ex <- dtms_transitions(model=fit_b_w,dtms=hrspredict,controls=reused_ex_0)
+  probs_b_w_0_sm <- dtms_transitions(model=fit_b_w,dtms=hrspredict,controls=reused_sm_0)
+  probs_b_w_1_ns <- dtms_transitions(model=fit_b_w,dtms=hrspredict,controls=reused_ns_1)
+  probs_b_w_1_ex <- dtms_transitions(model=fit_b_w,dtms=hrspredict,controls=reused_ex_1)
+  probs_b_w_1_sm <- dtms_transitions(model=fit_b_w,dtms=hrspredict,controls=reused_sm_1)
+  probs_b_w_2_ns <- dtms_transitions(model=fit_b_w,dtms=hrspredict,controls=reused_ns_2)
+  probs_b_w_2_ex <- dtms_transitions(model=fit_b_w,dtms=hrspredict,controls=reused_ex_2)
+  probs_b_w_2_sm <- dtms_transitions(model=fit_b_w,dtms=hrspredict,controls=reused_sm_2)
+  
+  probs_h_m_0_ns <- dtms_transitions(model=fit_h_m,dtms=hrspredict,controls=reused_ns_0)
+  probs_h_m_0_ex <- dtms_transitions(model=fit_h_m,dtms=hrspredict,controls=reused_ex_0)
+  probs_h_m_0_sm <- dtms_transitions(model=fit_h_m,dtms=hrspredict,controls=reused_sm_0)
+  probs_h_m_1_ns <- dtms_transitions(model=fit_h_m,dtms=hrspredict,controls=reused_ns_1)
+  probs_h_m_1_ex <- dtms_transitions(model=fit_h_m,dtms=hrspredict,controls=reused_ex_1)
+  probs_h_m_1_sm <- dtms_transitions(model=fit_h_m,dtms=hrspredict,controls=reused_sm_1)
+  probs_h_m_2_ns <- dtms_transitions(model=fit_h_m,dtms=hrspredict,controls=reused_ns_2)
+  probs_h_m_2_ex <- dtms_transitions(model=fit_h_m,dtms=hrspredict,controls=reused_ex_2)
+  probs_h_m_2_sm <- dtms_transitions(model=fit_h_m,dtms=hrspredict,controls=reused_sm_2)
+  
+  probs_h_w_0_ns <- dtms_transitions(model=fit_h_w,dtms=hrspredict,controls=reused_ns_0)
+  probs_h_w_0_ex <- dtms_transitions(model=fit_h_w,dtms=hrspredict,controls=reused_ex_0)
+  probs_h_w_0_sm <- dtms_transitions(model=fit_h_w,dtms=hrspredict,controls=reused_sm_0)
+  probs_h_w_1_ns <- dtms_transitions(model=fit_h_w,dtms=hrspredict,controls=reused_ns_1)
+  probs_h_w_1_ex <- dtms_transitions(model=fit_h_w,dtms=hrspredict,controls=reused_ex_1)
+  probs_h_w_1_sm <- dtms_transitions(model=fit_h_w,dtms=hrspredict,controls=reused_sm_1)
+  probs_h_w_2_ns <- dtms_transitions(model=fit_h_w,dtms=hrspredict,controls=reused_ns_2)
+  probs_h_w_2_ex <- dtms_transitions(model=fit_h_w,dtms=hrspredict,controls=reused_ex_2)
+  probs_h_w_2_sm <- dtms_transitions(model=fit_h_w,dtms=hrspredict,controls=reused_sm_2)
+  
+  # Transition matrix: total population
+  tmat_ns <- dtms_matrix(probs=probs_ns,dtms=hrspredict)
+  tmat_ex <- dtms_matrix(probs=probs_ex,dtms=hrspredict)
+  tmat_sm <- dtms_matrix(probs=probs_sm,dtms=hrspredict)
+  
+  # Transition matrix: gender
+  tmat_m_ns <- dtms_matrix(probs=probs_m_ns,dtms=hrspredict)
+  tmat_m_ex <- dtms_matrix(probs=probs_m_ex,dtms=hrspredict)
+  tmat_m_sm <- dtms_matrix(probs=probs_m_sm,dtms=hrspredict)
+  
+  tmat_w_ns <- dtms_matrix(probs=probs_w_ns,dtms=hrspredict)
+  tmat_w_ex <- dtms_matrix(probs=probs_w_ex,dtms=hrspredict)
+  tmat_w_sm <- dtms_matrix(probs=probs_w_sm,dtms=hrspredict)
+  
+  # Transition matrix: gender + education + race/ethnicity
+  tmat_w_m_0_ns <- dtms_matrix(probs=probs_w_m_0_ns,dtms=hrspredict)
+  tmat_w_m_0_ex <- dtms_matrix(probs=probs_w_m_0_ex,dtms=hrspredict)
+  tmat_w_m_0_sm <- dtms_matrix(probs=probs_w_m_0_sm,dtms=hrspredict)
+  tmat_w_m_1_ns <- dtms_matrix(probs=probs_w_m_1_ns,dtms=hrspredict)
+  tmat_w_m_1_ex <- dtms_matrix(probs=probs_w_m_1_ex,dtms=hrspredict)
+  tmat_w_m_1_sm <- dtms_matrix(probs=probs_w_m_1_sm,dtms=hrspredict)
+  tmat_w_m_2_ns <- dtms_matrix(probs=probs_w_m_2_ns,dtms=hrspredict)
+  tmat_w_m_2_ex <- dtms_matrix(probs=probs_w_m_2_ex,dtms=hrspredict)
+  tmat_w_m_2_sm <- dtms_matrix(probs=probs_w_m_2_sm,dtms=hrspredict)
+  
+  tmat_w_w_0_ns <- dtms_matrix(probs=probs_w_w_0_ns,dtms=hrspredict)
+  tmat_w_w_0_ex <- dtms_matrix(probs=probs_w_w_0_ex,dtms=hrspredict)
+  tmat_w_w_0_sm <- dtms_matrix(probs=probs_w_w_0_sm,dtms=hrspredict)
+  tmat_w_w_1_ns <- dtms_matrix(probs=probs_w_w_1_ns,dtms=hrspredict)
+  tmat_w_w_1_ex <- dtms_matrix(probs=probs_w_w_1_ex,dtms=hrspredict)
+  tmat_w_w_1_sm <- dtms_matrix(probs=probs_w_w_1_sm,dtms=hrspredict)
+  tmat_w_w_2_ns <- dtms_matrix(probs=probs_w_w_2_ns,dtms=hrspredict)
+  tmat_w_w_2_ex <- dtms_matrix(probs=probs_w_w_2_ex,dtms=hrspredict)
+  tmat_w_w_2_sm <- dtms_matrix(probs=probs_w_w_2_sm,dtms=hrspredict)
+  
+  tmat_b_m_0_ns <- dtms_matrix(probs=probs_b_m_0_ns,dtms=hrspredict)
+  tmat_b_m_0_ex <- dtms_matrix(probs=probs_b_m_0_ex,dtms=hrspredict)
+  tmat_b_m_0_sm <- dtms_matrix(probs=probs_b_m_0_sm,dtms=hrspredict)
+  tmat_b_m_1_ns <- dtms_matrix(probs=probs_b_m_1_ns,dtms=hrspredict)
+  tmat_b_m_1_ex <- dtms_matrix(probs=probs_b_m_1_ex,dtms=hrspredict)
+  tmat_b_m_1_sm <- dtms_matrix(probs=probs_b_m_1_sm,dtms=hrspredict)
+  tmat_b_m_2_ns <- dtms_matrix(probs=probs_b_m_2_ns,dtms=hrspredict)
+  tmat_b_m_2_ex <- dtms_matrix(probs=probs_b_m_2_ex,dtms=hrspredict)
+  tmat_b_m_2_sm <- dtms_matrix(probs=probs_b_m_2_sm,dtms=hrspredict)
+  
+  tmat_b_w_0_ns <- dtms_matrix(probs=probs_b_w_0_ns,dtms=hrspredict)
+  tmat_b_w_0_ex <- dtms_matrix(probs=probs_b_w_0_ex,dtms=hrspredict)
+  tmat_b_w_0_sm <- dtms_matrix(probs=probs_b_w_0_sm,dtms=hrspredict)
+  tmat_b_w_1_ns <- dtms_matrix(probs=probs_b_w_1_ns,dtms=hrspredict)
+  tmat_b_w_1_ex <- dtms_matrix(probs=probs_b_w_1_ex,dtms=hrspredict)
+  tmat_b_w_1_sm <- dtms_matrix(probs=probs_b_w_1_sm,dtms=hrspredict)
+  tmat_b_w_2_ns <- dtms_matrix(probs=probs_b_w_2_ns,dtms=hrspredict)
+  tmat_b_w_2_ex <- dtms_matrix(probs=probs_b_w_2_ex,dtms=hrspredict)
+  tmat_b_w_2_sm <- dtms_matrix(probs=probs_b_w_2_sm,dtms=hrspredict)
+
+  tmat_h_m_0_ns <- dtms_matrix(probs=probs_h_m_0_ns,dtms=hrspredict)
+  tmat_h_m_0_ex <- dtms_matrix(probs=probs_h_m_0_ex,dtms=hrspredict)
+  tmat_h_m_0_sm <- dtms_matrix(probs=probs_h_m_0_sm,dtms=hrspredict)
+  tmat_h_m_1_ns <- dtms_matrix(probs=probs_h_m_1_ns,dtms=hrspredict)
+  tmat_h_m_1_ex <- dtms_matrix(probs=probs_h_m_1_ex,dtms=hrspredict)
+  tmat_h_m_1_sm <- dtms_matrix(probs=probs_h_m_1_sm,dtms=hrspredict)
+  tmat_h_m_2_ns <- dtms_matrix(probs=probs_h_m_2_ns,dtms=hrspredict)
+  tmat_h_m_2_ex <- dtms_matrix(probs=probs_h_m_2_ex,dtms=hrspredict)
+  tmat_h_m_2_sm <- dtms_matrix(probs=probs_h_m_2_sm,dtms=hrspredict)
+  
+  tmat_h_w_0_ns <- dtms_matrix(probs=probs_h_w_0_ns,dtms=hrspredict)
+  tmat_h_w_0_ex <- dtms_matrix(probs=probs_h_w_0_ex,dtms=hrspredict)
+  tmat_h_w_0_sm <- dtms_matrix(probs=probs_h_w_0_sm,dtms=hrspredict)
+  tmat_h_w_1_ns <- dtms_matrix(probs=probs_h_w_1_ns,dtms=hrspredict)
+  tmat_h_w_1_ex <- dtms_matrix(probs=probs_h_w_1_ex,dtms=hrspredict)
+  tmat_h_w_1_sm <- dtms_matrix(probs=probs_h_w_1_sm,dtms=hrspredict)
+  tmat_h_w_2_ns <- dtms_matrix(probs=probs_h_w_2_ns,dtms=hrspredict)
+  tmat_h_w_2_ex <- dtms_matrix(probs=probs_h_w_2_ex,dtms=hrspredict)
+  tmat_h_w_2_sm <- dtms_matrix(probs=probs_h_w_2_sm,dtms=hrspredict)
+  
+  
+### Starting distribution ######################################################
+  
+  # General sample
+  start_ns <- dtms_start(data=estdata,dtms=hrspredict,variables=list(smoke=0))
+  start_ex <- dtms_start(data=estdata,dtms=hrspredict,variables=list(smoke=1))
+  start_sm <- dtms_start(data=estdata,dtms=hrspredict,variables=list(smoke=2))
+  
+  # Gender
+  start_m_ns <- dtms_start(data=estdata_m,dtms=hrspredict,variables=list(smoke=0))
+  start_m_ex <- dtms_start(data=estdata_m,dtms=hrspredict,variables=list(smoke=1))
+  start_m_sm <- dtms_start(data=estdata_m,dtms=hrspredict,variables=list(smoke=2))
+
+  start_w_ns <- dtms_start(data=estdata_w,dtms=hrspredict,variables=list(smoke=0))
+  start_w_ex <- dtms_start(data=estdata_w,dtms=hrspredict,variables=list(smoke=1))
+  start_w_sm <- dtms_start(data=estdata_w,dtms=hrspredict,variables=list(smoke=2))
+  
+  # Gender + education + race/ethnicity 
+  start_w_m_0_ns <- dtms_start(data=estdata_w_m,dtms=hrspredict,variables=list(smoke=0,education=0))
+  start_w_m_0_ex <- dtms_start(data=estdata_w_m,dtms=hrspredict,variables=list(smoke=1,education=0))
+  start_w_m_0_sm <- dtms_start(data=estdata_w_m,dtms=hrspredict,variables=list(smoke=2,education=0))
+  start_w_m_1_ns <- dtms_start(data=estdata_w_m,dtms=hrspredict,variables=list(smoke=0,education=1))
+  start_w_m_1_ex <- dtms_start(data=estdata_w_m,dtms=hrspredict,variables=list(smoke=1,education=1))
+  start_w_m_1_sm <- dtms_start(data=estdata_w_m,dtms=hrspredict,variables=list(smoke=2,education=1))
+  start_w_m_2_ns <- dtms_start(data=estdata_w_m,dtms=hrspredict,variables=list(smoke=0,education=2))
+  start_w_m_2_ex <- dtms_start(data=estdata_w_m,dtms=hrspredict,variables=list(smoke=1,education=2))
+  start_w_m_2_sm <- dtms_start(data=estdata_w_m,dtms=hrspredict,variables=list(smoke=2,education=2))
+  
+  start_w_w_0_ns <- dtms_start(data=estdata_w_w,dtms=hrspredict,variables=list(smoke=0,education=0))
+  start_w_w_0_ex <- dtms_start(data=estdata_w_w,dtms=hrspredict,variables=list(smoke=1,education=0))
+  start_w_w_0_sm <- dtms_start(data=estdata_w_w,dtms=hrspredict,variables=list(smoke=2,education=0))
+  start_w_w_1_ns <- dtms_start(data=estdata_w_w,dtms=hrspredict,variables=list(smoke=0,education=1))
+  start_w_w_1_ex <- dtms_start(data=estdata_w_w,dtms=hrspredict,variables=list(smoke=1,education=1))
+  start_w_w_1_sm <- dtms_start(data=estdata_w_w,dtms=hrspredict,variables=list(smoke=2,education=1))
+  start_w_w_2_ns <- dtms_start(data=estdata_w_w,dtms=hrspredict,variables=list(smoke=0,education=2))
+  start_w_w_2_ex <- dtms_start(data=estdata_w_w,dtms=hrspredict,variables=list(smoke=1,education=2))
+  start_w_w_2_sm <- dtms_start(data=estdata_w_w,dtms=hrspredict,variables=list(smoke=2,education=2))
+  
+  start_b_m_0_ns <- dtms_start(data=estdata_b_m,dtms=hrspredict,variables=list(smoke=0,education=0))
+  start_b_m_0_ex <- dtms_start(data=estdata_b_m,dtms=hrspredict,variables=list(smoke=1,education=0))
+  start_b_m_0_sm <- dtms_start(data=estdata_b_m,dtms=hrspredict,variables=list(smoke=2,education=0))
+  start_b_m_1_ns <- dtms_start(data=estdata_b_m,dtms=hrspredict,variables=list(smoke=0,education=1))
+  start_b_m_1_ex <- dtms_start(data=estdata_b_m,dtms=hrspredict,variables=list(smoke=1,education=1))
+  start_b_m_1_sm <- dtms_start(data=estdata_b_m,dtms=hrspredict,variables=list(smoke=2,education=1))
+  start_b_m_2_ns <- dtms_start(data=estdata_b_m,dtms=hrspredict,variables=list(smoke=0,education=2))
+  start_b_m_2_ex <- dtms_start(data=estdata_b_m,dtms=hrspredict,variables=list(smoke=1,education=2))
+  start_b_m_2_sm <- dtms_start(data=estdata_b_m,dtms=hrspredict,variables=list(smoke=2,education=2))
+  
+  start_b_w_0_ns <- dtms_start(data=estdata_b_w,dtms=hrspredict,variables=list(smoke=0,education=0))
+  start_b_w_0_ex <- dtms_start(data=estdata_b_w,dtms=hrspredict,variables=list(smoke=1,education=0))
+  start_b_w_0_sm <- dtms_start(data=estdata_b_w,dtms=hrspredict,variables=list(smoke=2,education=0))
+  start_b_w_1_ns <- dtms_start(data=estdata_b_w,dtms=hrspredict,variables=list(smoke=0,education=1))
+  start_b_w_1_ex <- dtms_start(data=estdata_b_w,dtms=hrspredict,variables=list(smoke=1,education=1))
+  start_b_w_1_sm <- dtms_start(data=estdata_b_w,dtms=hrspredict,variables=list(smoke=2,education=1))
+  start_b_w_2_ns <- dtms_start(data=estdata_b_w,dtms=hrspredict,variables=list(smoke=0,education=2))
+  start_b_w_2_ex <- dtms_start(data=estdata_b_w,dtms=hrspredict,variables=list(smoke=1,education=2))
+  start_b_w_2_sm <- dtms_start(data=estdata_b_w,dtms=hrspredict,variables=list(smoke=2,education=2))
+  
+  start_h_m_0_ns <- dtms_start(data=estdata_h_m,dtms=hrspredict,variables=list(smoke=0,education=0))
+  start_h_m_0_ex <- dtms_start(data=estdata_h_m,dtms=hrspredict,variables=list(smoke=1,education=0))
+  start_h_m_0_sm <- dtms_start(data=estdata_h_m,dtms=hrspredict,variables=list(smoke=2,education=0))
+  start_h_m_1_ns <- dtms_start(data=estdata_h_m,dtms=hrspredict,variables=list(smoke=0,education=1))
+  start_h_m_1_ex <- dtms_start(data=estdata_h_m,dtms=hrspredict,variables=list(smoke=1,education=1))
+  start_h_m_1_sm <- dtms_start(data=estdata_h_m,dtms=hrspredict,variables=list(smoke=2,education=1))
+  start_h_m_2_ns <- dtms_start(data=estdata_h_m,dtms=hrspredict,variables=list(smoke=0,education=2))
+  start_h_m_2_ex <- dtms_start(data=estdata_h_m,dtms=hrspredict,variables=list(smoke=1,education=2))
+  start_h_m_2_sm <- dtms_start(data=estdata_h_m,dtms=hrspredict,variables=list(smoke=2,education=2))
+  
+  start_h_w_0_ns <- dtms_start(data=estdata_h_w,dtms=hrspredict,variables=list(smoke=0,education=0))
+  start_h_w_0_ex <- dtms_start(data=estdata_h_w,dtms=hrspredict,variables=list(smoke=1,education=0))
+  start_h_w_0_sm <- dtms_start(data=estdata_h_w,dtms=hrspredict,variables=list(smoke=2,education=0))
+  start_h_w_1_ns <- dtms_start(data=estdata_h_w,dtms=hrspredict,variables=list(smoke=0,education=1))
+  start_h_w_1_ex <- dtms_start(data=estdata_h_w,dtms=hrspredict,variables=list(smoke=1,education=1))
+  start_h_w_1_sm <- dtms_start(data=estdata_h_w,dtms=hrspredict,variables=list(smoke=2,education=1))
+  start_h_w_2_ns <- dtms_start(data=estdata_h_w,dtms=hrspredict,variables=list(smoke=0,education=2))
+  start_h_w_2_ex <- dtms_start(data=estdata_h_w,dtms=hrspredict,variables=list(smoke=1,education=2))
+  start_h_w_2_sm <- dtms_start(data=estdata_h_w,dtms=hrspredict,variables=list(smoke=2,education=2))
+  
+  
+### Expectancies ###############################################################  
+  
+  # General population
+  hwle_ns <- dtms_expectancy(matrix=tmat_ns,start_distr=start_ns,dtms=hrspredict)
+  hwle_ex <- dtms_expectancy(matrix=tmat_ex,start_distr=start_ex,dtms=hrspredict)
+  hwle_sm <- dtms_expectancy(matrix=tmat_sm,start_distr=start_sm,dtms=hrspredict)
+  
+  # Gender
+  hwle_m_ns <- dtms_expectancy(matrix=tmat_m_ns,start_distr=start_m_ns,dtms=hrspredict)
+  hwle_m_ex <- dtms_expectancy(matrix=tmat_m_ex,start_distr=start_m_ex,dtms=hrspredict)
+  hwle_m_sm <- dtms_expectancy(matrix=tmat_m_sm,start_distr=start_m_sm,dtms=hrspredict)
+  hwle_w_ns <- dtms_expectancy(matrix=tmat_w_ns,start_distr=start_w_ns,dtms=hrspredict)
+  hwle_w_ex <- dtms_expectancy(matrix=tmat_w_ex,start_distr=start_w_ex,dtms=hrspredict)
+  hwle_w_sm <- dtms_expectancy(matrix=tmat_w_sm,start_distr=start_w_sm,dtms=hrspredict)
+  
+  # Gender + education + race/ethnicity 
+  hwle_w_m_0_ns <- dtms_expectancy(matrix=tmat_w_m_0_ns,start_distr=start_w_m_0_ns,dtms=hrspredict)
+  hwle_w_m_0_ex <- dtms_expectancy(matrix=tmat_w_m_0_ex,start_distr=start_w_m_0_ex,dtms=hrspredict)
+  hwle_w_m_0_sm <- dtms_expectancy(matrix=tmat_w_m_0_sm,start_distr=start_w_m_0_sm,dtms=hrspredict)
+  hwle_w_m_1_ns <- dtms_expectancy(matrix=tmat_w_m_1_ns,start_distr=start_w_m_1_ns,dtms=hrspredict)
+  hwle_w_m_1_ex <- dtms_expectancy(matrix=tmat_w_m_1_ex,start_distr=start_w_m_1_ex,dtms=hrspredict)
+  hwle_w_m_1_sm <- dtms_expectancy(matrix=tmat_w_m_1_sm,start_distr=start_w_m_1_sm,dtms=hrspredict)
+  hwle_w_m_2_ns <- dtms_expectancy(matrix=tmat_w_m_2_ns,start_distr=start_w_m_2_ns,dtms=hrspredict)
+  hwle_w_m_2_ex <- dtms_expectancy(matrix=tmat_w_m_2_ex,start_distr=start_w_m_2_ex,dtms=hrspredict)
+  hwle_w_m_2_sm <- dtms_expectancy(matrix=tmat_w_m_2_sm,start_distr=start_w_m_2_sm,dtms=hrspredict)
+  
+  hwle_w_w_0_ns <- dtms_expectancy(matrix=tmat_w_w_0_ns,start_distr=start_w_w_0_ns,dtms=hrspredict)
+  hwle_w_w_0_ex <- dtms_expectancy(matrix=tmat_w_w_0_ex,start_distr=start_w_w_0_ex,dtms=hrspredict)
+  hwle_w_w_0_sm <- dtms_expectancy(matrix=tmat_w_w_0_sm,start_distr=start_w_w_0_sm,dtms=hrspredict)
+  hwle_w_w_1_ns <- dtms_expectancy(matrix=tmat_w_w_1_ns,start_distr=start_w_w_1_ns,dtms=hrspredict)
+  hwle_w_w_1_ex <- dtms_expectancy(matrix=tmat_w_w_1_ex,start_distr=start_w_w_1_ex,dtms=hrspredict)
+  hwle_w_w_1_sm <- dtms_expectancy(matrix=tmat_w_w_1_sm,start_distr=start_w_w_1_sm,dtms=hrspredict)
+  hwle_w_w_2_ns <- dtms_expectancy(matrix=tmat_w_w_2_ns,start_distr=start_w_w_2_ns,dtms=hrspredict)
+  hwle_w_w_2_ex <- dtms_expectancy(matrix=tmat_w_w_2_ex,start_distr=start_w_w_2_ex,dtms=hrspredict)
+  hwle_w_w_2_sm <- dtms_expectancy(matrix=tmat_w_w_2_sm,start_distr=start_w_w_2_sm,dtms=hrspredict)
+  
+  hwle_b_m_0_ns <- dtms_expectancy(matrix=tmat_b_m_0_ns,start_distr=start_b_m_0_ns,dtms=hrspredict)
+  hwle_b_m_0_ex <- dtms_expectancy(matrix=tmat_b_m_0_ex,start_distr=start_b_m_0_ex,dtms=hrspredict)
+  hwle_b_m_0_sm <- dtms_expectancy(matrix=tmat_b_m_0_sm,start_distr=start_b_m_0_sm,dtms=hrspredict)
+  hwle_b_m_1_ns <- dtms_expectancy(matrix=tmat_b_m_1_ns,start_distr=start_b_m_1_ns,dtms=hrspredict)
+  hwle_b_m_1_ex <- dtms_expectancy(matrix=tmat_b_m_1_ex,start_distr=start_b_m_1_ex,dtms=hrspredict)
+  hwle_b_m_1_sm <- dtms_expectancy(matrix=tmat_b_m_1_sm,start_distr=start_b_m_1_sm,dtms=hrspredict)
+  hwle_b_m_2_ns <- dtms_expectancy(matrix=tmat_b_m_2_ns,start_distr=start_b_m_2_ns,dtms=hrspredict)
+  hwle_b_m_2_ex <- dtms_expectancy(matrix=tmat_b_m_2_ex,start_distr=start_b_m_2_ex,dtms=hrspredict)
+  hwle_b_m_2_sm <- dtms_expectancy(matrix=tmat_b_m_2_sm,start_distr=start_b_m_2_sm,dtms=hrspredict)
+  
+  hwle_b_w_0_ns <- dtms_expectancy(matrix=tmat_b_w_0_ns,start_distr=start_b_w_0_ns,dtms=hrspredict)
+  hwle_b_w_0_ex <- dtms_expectancy(matrix=tmat_b_w_0_ex,start_distr=start_b_w_0_ex,dtms=hrspredict)
+  hwle_b_w_0_sm <- dtms_expectancy(matrix=tmat_b_w_0_sm,start_distr=start_b_w_0_sm,dtms=hrspredict)
+  hwle_b_w_1_ns <- dtms_expectancy(matrix=tmat_b_w_1_ns,start_distr=start_b_w_1_ns,dtms=hrspredict)
+  hwle_b_w_1_ex <- dtms_expectancy(matrix=tmat_b_w_1_ex,start_distr=start_b_w_1_ex,dtms=hrspredict)
+  hwle_b_w_1_sm <- dtms_expectancy(matrix=tmat_b_w_1_sm,start_distr=start_b_w_1_sm,dtms=hrspredict)
+  hwle_b_w_2_ns <- dtms_expectancy(matrix=tmat_b_w_2_ns,start_distr=start_b_w_2_ns,dtms=hrspredict)
+  hwle_b_w_2_ex <- dtms_expectancy(matrix=tmat_b_w_2_ex,start_distr=start_b_w_2_ex,dtms=hrspredict)
+  hwle_b_w_2_sm <- dtms_expectancy(matrix=tmat_b_w_2_sm,start_distr=start_b_w_2_sm,dtms=hrspredict)
+  
+  hwle_h_m_0_ns <- dtms_expectancy(matrix=tmat_h_m_0_ns,start_distr=start_h_m_0_ns,dtms=hrspredict)
+  hwle_h_m_0_ex <- dtms_expectancy(matrix=tmat_h_m_0_ex,start_distr=start_h_m_0_ex,dtms=hrspredict)
+  hwle_h_m_0_sm <- dtms_expectancy(matrix=tmat_h_m_0_sm,start_distr=start_h_m_0_sm,dtms=hrspredict)
+  hwle_h_m_1_ns <- dtms_expectancy(matrix=tmat_h_m_1_ns,start_distr=start_h_m_1_ns,dtms=hrspredict)
+  hwle_h_m_1_ex <- dtms_expectancy(matrix=tmat_h_m_1_ex,start_distr=start_h_m_1_ex,dtms=hrspredict)
+  hwle_h_m_1_sm <- dtms_expectancy(matrix=tmat_h_m_1_sm,start_distr=start_h_m_1_sm,dtms=hrspredict)
+  hwle_h_m_2_ns <- dtms_expectancy(matrix=tmat_h_m_2_ns,start_distr=start_h_m_2_ns,dtms=hrspredict)
+  hwle_h_m_2_ex <- dtms_expectancy(matrix=tmat_h_m_2_ex,start_distr=start_h_m_2_ex,dtms=hrspredict)
+  hwle_h_m_2_sm <- dtms_expectancy(matrix=tmat_h_m_2_sm,start_distr=start_h_m_2_sm,dtms=hrspredict)
+  
+  hwle_h_w_0_ns <- dtms_expectancy(matrix=tmat_h_w_0_ns,start_distr=start_h_w_0_ns,dtms=hrspredict)
+  hwle_h_w_0_ex <- dtms_expectancy(matrix=tmat_h_w_0_ex,start_distr=start_h_w_0_ex,dtms=hrspredict)
+  hwle_h_w_0_sm <- dtms_expectancy(matrix=tmat_h_w_0_sm,start_distr=start_h_w_0_sm,dtms=hrspredict)
+  hwle_h_w_1_ns <- dtms_expectancy(matrix=tmat_h_w_1_ns,start_distr=start_h_w_1_ns,dtms=hrspredict)
+  hwle_h_w_1_ex <- dtms_expectancy(matrix=tmat_h_w_1_ex,start_distr=start_h_w_1_ex,dtms=hrspredict)
+  hwle_h_w_1_sm <- dtms_expectancy(matrix=tmat_h_w_1_sm,start_distr=start_h_w_1_sm,dtms=hrspredict)
+  hwle_h_w_2_ns <- dtms_expectancy(matrix=tmat_h_w_2_ns,start_distr=start_h_w_2_ns,dtms=hrspredict)
+  hwle_h_w_2_ex <- dtms_expectancy(matrix=tmat_h_w_2_ex,start_distr=start_h_w_2_ex,dtms=hrspredict)
+  hwle_h_w_2_sm <- dtms_expectancy(matrix=tmat_h_w_2_sm,start_distr=start_h_w_2_sm,dtms=hrspredict)
+  
+### Aggregate ##################################################################
+  
+  table(estdata_m$education,estdata_m$race)
+  
+### Group differences ##########################################################  
+  
 ################################################################################  
 ################################################################################
 ################################################################################
 
-###### estdata and forward ####
-
-hrs_2000 <- hrs_2000 |> mutate(state_health=case_match(
-  state,
-  c("not working/healthy","working/healthy")~"healthy",
-  c("not working/unhealthy","working/unhealthy")~"unhealthy",
-  c("dead")~"dead",
-  .default=state),
-  state_work=case_match(
-    state,
-    c("not working/healthy","not working/unhealthy")~"not working",
-    c("working/healthy","working/unhealthy")~"working",
-    c("dead")~"dead",
-    .default=state))
-
-###### Setup dtms ####
-hrsdtms <- dtms(transient=c("working/healthy","not working/healthy","working/unhealthy","not working/unhealthy"),
-                absorbing="dead",
-                timescale=seq(50,98,1),
-                timestep=1:3)
-
-hrs_2000forward<-dtms_forward(data=hrs_2000,dtms=hrsdtms,state="unhealthy",statevar="state_health",idvar="id",timevar="age",overwrite="transient")
-
-hrs_2000forward <- hrs_2000forward |>
-  mutate(state = case_when(
-    state_health == "healthy"   & state_work == "working"     ~ "working/healthy",
-    state_health == "unhealthy" & state_work == "working"     ~ "working/unhealthy",
-    state_health == "healthy"   & state_work == "not working" ~ "not working/healthy",
-    state_health == "unhealthy" & state_work == "not working" ~ "not working/unhealthy",
-    state_health == "dead"                                      ~ "dead",
-    TRUE ~ NA_character_   # catch any unexpected combos
-  ))
-
-# If healthy - unhealthy - healthy --> healthy - unhealthy - "unhealthy"
-
-######## Step lenght
-estdata <- dtms_format(data=hrs_2000,
-                       dtms=hrsdtms,
-                       idvar="id",
-                       timevar="age",
-                       statevar="state",
-                       steplength=TRUE)
-
-estdata_noclean<-estdata
-estdata <- dtms_clean(data=estdata,dtms=hrsdtms)
-
-estdata_excl<-estdata_noclean %>% filter(id %ni% estdata$id)
-
-estdata_excl<-estdata_excl %>% filter(from!="dead") %>% group_by(id) %>% slice(1)
-
-estdata_excl_bl<-estdata_excl %>% group_by(id) %>% slice(1)
-
-estdata %>% filter(from=="working/unhealthy" & to=="working/healthy")
-estdata %>% filter(from=="working/unhealthy" & to=="not working/healthy")
-estdata %>% filter(from=="not working/unhealthy" & to=="not working/healthy")
-estdata %>% filter(from=="not working/unhealthy" & to=="working/healthy")
-
-estdata %>% filter(from=="working/unhealthy" & to=="not working/unhealthy")
-estdata %>% filter(from=="working/unhealthy" & to=="not working/unhealthy")
-estdata %>% filter(from=="not working/unhealthy" & to=="working/unhealthy")
-estdata %>% filter(from=="not working/unhealthy" & to=="not working/unhealthy")
-
-estdata_forward <- dtms_format(data=hrs_2000forward,
-                               dtms=hrsdtms,
-                               idvar="id",
-                               timevar="age",
-                               statevar="state",
-                               steplength=TRUE)
-estdata_forward <- dtms_clean(data=estdata_forward,dtms=hrsdtms)
-nrow(estdata_forward)
-
-estdata_forward %>% filter(from=="working/unhealthy" & to=="working/healthy")
-estdata_forward %>% filter(from=="working/unhealthy" & to=="not working/healthy")
-estdata_forward %>% filter(from=="not working/unhealthy" & to=="not working/healthy")
-estdata_forward %>% filter(from=="not working/unhealthy" & to=="working/healthy")
-
-estdata_forward %>% filter(from=="working/unhealthy" & to=="not working/unhealthy")
-estdata_forward %>% filter(from=="working/unhealthy" & to=="not working/unhealthy")
-estdata_forward %>% filter(from=="not working/unhealthy" & to=="working/unhealthy")
-estdata_forward %>% filter(from=="not working/unhealthy" & to=="not working/unhealthy")
-
-length(unique(estdata$id))
-length(unique(estdata_forward$id))
-
-###### Drop cases (transition unhealthy to healthy) ##########
-estdata_drop <- estdata %>%
-  filter(!( (from == "working/unhealthy"   & to == "working/healthy") |
-              (from == "working/unhealthy"   & to == "not working/healthy") |
-              (from == "not working/unhealthy" & to == "not working/healthy") |
-              (from == "not working/unhealthy" & to == "working/healthy") ))
-estdata_drop <- dtms_clean(data=estdata_drop,dtms=hrsdtms)
-(nrow(estdata)-nrow(estdata_drop))/nrow(estdata)*100
-
-estdata_drop %>% filter(from=="working/unhealthy" & to=="working/healthy")
-estdata_drop %>% filter(from=="working/unhealthy" & to=="not working/healthy")
-estdata_drop %>% filter(from=="not working/unhealthy" & to=="not working/healthy")
-estdata_drop %>% filter(from=="not working/unhealthy" & to=="working/healthy")
-
-estdata_drop %>% filter(from=="working/unhealthy" & to=="not working/unhealthy")
-estdata_drop %>% filter(from=="working/unhealthy" & to=="not working/unhealthy")
-estdata_drop %>% filter(from=="not working/unhealthy" & to=="working/unhealthy")
-estdata_drop %>% filter(from=="not working/unhealthy" & to=="not working/unhealthy")
-
-###### Subsets by gender and race/ethnicity (1) Forward and (2) Drop ####
-
-estdata$time2 <- estdata$time^2
-estdata$smoke <- as.factor(estdata$smoke)
-estdata$education <- as.factor(estdata$education)
-estdata_finale<-estdata
-estdata_finale_bl<-estdata %>% group_by(id) %>% slice(1)
-length(unique(estdata$id))
-length(unique(estdata_finale_bl$id))
-
-estdata_forward$time2 <- estdata_forward$time^2
-estdata_forward$smoke <- as.factor(estdata_forward$smoke)
-estdata_forward$education <- as.factor(estdata_forward$education)
-estdata_forward_finale<-estdata_forward
-estdata_forward_finale_bl<-estdata_forward %>% group_by(id) %>% slice(1)
-length(unique(estdata_forward$id))
-length(unique(estdata_forward_finale_bl$id))
-
-estdata_drop$time2 <- estdata_drop$time^2
-estdata_drop$smoke <- as.factor(estdata_drop$smoke)
-estdata_drop$education <- as.factor(estdata_drop$education)
-estdata_drop_finale<-estdata_drop
-estdata_drop_finale_bl<-estdata_drop %>% group_by(id) %>% slice(1)
-length(unique(estdata_drop$id))
-length(unique(estdata_drop_finale_bl$id))
-length(unique(estdata_forward_finale_bl$id))-length(unique(estdata_drop_finale_bl$id))
-
-((length(unique(estdata$id))-length(unique(estdata_drop$id)))/length(unique(estdata$id)))*100
-length(unique(estdata$id))-length(unique(estdata_drop$id))
-(nrow(estdata)-nrow(estdata_drop))/nrow(estdata)*100
-length(unique(estdata_forward$id))
-length(unique(estdata_drop$id))
-
-
-###### Stratification ###############
-estdata_forward_m<-estdata_forward %>% filter(as.vector(gender)==1 & race!="Other")
-estdata_forward_m.white<-estdata_forward %>% filter(as.vector(gender)==1 & race=="White")
-estdata_forward_m.black<-estdata_forward %>% filter(as.vector(gender)==1 & race=="Black")
-estdata_forward_m.hispan<-estdata_forward %>% filter(as.vector(gender)==1 & race=="Hispan")
-
-estdata_forward_f<-estdata_forward %>% filter(as.vector(gender)==2 & race!="Other")
-estdata_forward_f.white<-estdata_forward %>% filter(as.vector(gender)==2 & race=="White")
-estdata_forward_f.black<-estdata_forward %>% filter(as.vector(gender)==2 & race=="Black")
-estdata_forward_f.hispan<-estdata_forward %>% filter(as.vector(gender)==2 & race=="Hispan")
-
-###### Descriptive Table #########
-nrow(estdata_forward_finale_bl)
-nrow(estdata_forward_finale)
-
-round(prop.table(table(estdata_forward_finale_bl$gender,estdata_forward_finale_bl$race))*100,1)
-table(estdata_forward_finale_bl$gender,estdata_forward_finale_bl$race)
-
-table(estdata_forward_finale$gender,estdata_forward_finale$race)
-round(prop.table(table(estdata_forward_finale$gender,estdata_forward_finale$race))*100)
-
-table(estdata_forward_finale_bl$gender,estdata_forward_finale_bl$education)
-round(prop.table(table(estdata_forward_finale_bl$gender,estdata_forward_finale_bl$education))*100)
-
-table(estdata_forward_finale$gender,estdata_forward_finale$education)
-round(prop.table(table(estdata_forward_finale$gender,estdata_forward_finale$education))*100)
-
-table(estdata_forward_finale_bl$gender,estdata_forward_finale_bl$smoke)
-round(prop.table(table(estdata_forward_finale_bl$gender,estdata_forward_finale_bl$smoke))*100)
-
-table(estdata_forward_finale$gender,estdata_forward_finale$smoke)
-round(prop.table(table(estdata_forward_finale$gender,estdata_forward_finale$smoke))*100)
-
-nrow(estdata_forward_finale)
-table(estdata_forward_finale$from,estdata_forward_finale$to)
-sum(table(estdata_forward_finale$from,estdata_forward_finale$to)[,"dead"])
-sum(table(estdata_forward_finale$from,estdata_forward_finale$to))
-
-table(estdata_forward_finale[estdata_forward_finale$gender==1,"from"],estdata_forward_finale[estdata_forward_finale$gender==1,"to"])[,"dead"]
-sum(table(estdata_forward_finale[estdata_forward_finale$gender==1,"from"],estdata_forward_finale[estdata_forward_finale$gender==1,"to"])[,"dead"])
-sum(table(estdata_forward_finale[estdata_forward_finale$gender==1,"from"],estdata_forward_finale[estdata_forward_finale$gender==1,"to"])[,"dead"])/nrow(estdata_forward_finale_bl[estdata_forward_finale_bl$gender==1,])*100
-
-table(estdata_forward_finale[estdata_forward_finale$gender==2,"from"],estdata_forward_finale[estdata_forward_finale$gender==2,"to"])[,"dead"]
-sum(table(estdata_forward_finale[estdata_forward_finale$gender==2,"from"],estdata_forward_finale[estdata_forward_finale$gender==2,"to"])[,"dead"])
-sum(table(estdata_forward_finale[estdata_forward_finale$gender==2,"from"],estdata_forward_finale[estdata_forward_finale$gender==2,"to"])[,"dead"])/nrow(estdata_forward_finale_bl[estdata_forward_finale_bl$gender==2,])*100
-
-table(estdata_forward_finale[estdata_forward_finale$gender==2,"from"],estdata_forward_finale[estdata_forward_finale$gender==2,"to"])[,"dead"]
-sum(table(estdata_forward_finale[estdata_forward_finale$gender==2,"from"],estdata_forward_finale[estdata_forward_finale$gender==2,"to"])[,"dead"])
-
-sum(table(estdata_forward_finale[estdata_forward_finale$gender==1,"from"],estdata_forward_finale[estdata_forward_finale$gender==1,"to"])[,"dead"])+
-  sum(table(estdata_forward_finale[estdata_forward_finale$gender==2,"from"],estdata_forward_finale[estdata_forward_finale$gender==2,"to"])[,"dead"])
-
-table(estdata_forward_finale$from,estdata_forward_finale$to)[3,]
-sum(table(estdata_forward_finale$from,estdata_forward_finale$to)[3,])
-round(prop.table(table(estdata_forward_finale$from,estdata_forward_finale$to)[3,])*100)
-
-
-
-table(estdata_forward_finale$from,estdata_forward_finale$to)[4,]
-sum(table(estdata_forward_finale$from,estdata_forward_finale$to)[4,])
-round(prop.table(table(estdata_forward_finale$from,estdata_forward_finale$to)[4,])*100)
-
-table(estdata_forward_finale$from,estdata_forward_finale$to)[1,]
-sum(table(estdata_forward_finale$from,estdata_forward_finale$to)[1,])
-round(prop.table(table(estdata_forward_finale$from,estdata_forward_finale$to)[1,])*100)
-
-table(estdata_forward_finale$from,estdata_forward_finale$to)[2,]
-sum(table(estdata_forward_finale$from,estdata_forward_finale$to)[2,])
-round(prop.table(table(estdata_forward_finale$from,estdata_forward_finale$to)[2,])*100)
-
-sum(table(estdata_forward_finale$from,estdata_forward_finale$to)[3,])
-sum(table(estdata_forward_finale$from,estdata_forward_finale$to)[4,])
-sum(table(estdata_forward_finale$from,estdata_forward_finale$to)[1,])
-sum(table(estdata_forward_finale$from,estdata_forward_finale$to)[2,])
 
 
 

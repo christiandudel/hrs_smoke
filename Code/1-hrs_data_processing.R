@@ -16,7 +16,7 @@
   if(!file.exists(rdafile)) { 
     
     # Data; can be obtained from https://hrs.isr.umich.edu
-    dtafile <- "Data/randhrs1992_2020v2.dta"
+    dtafile <- "Data/randhrs1992_2022v1.dta"
     
     # Load (slow!)
     hrs <- read.dta13(file=dtafile,
@@ -33,51 +33,51 @@
 
   hrs <- hrs %>% select(hhidpn,ragender,raddate,radyear,raeduc,raedyrs,rahispan,raracem,rabdate,rabyear,
                        # Wave status: Response indicator (1= in wave)
-                       inw1,inw2,inw3,inw4,inw5,inw6,inw7,inw8,inw9,inw10,inw11,inw12,inw13,inw14,inw15,
+                       inw1,inw2,inw3,inw4,inw5,inw6,inw7,inw8,inw9,inw10,inw11,inw12,inw13,inw14,inw15,inw16,
                        # Interview status (5 & 6 = dead)
-                       r1iwstat,r2iwstat,r3iwstat,r4iwstat,r5iwstat,r6iwstat,r7iwstat,r8iwstat,r9iwstat,r10iwstat,r11iwstat,r12iwstat,r13iwstat,r14iwstat,r15iwstat,
+                       r1iwstat,r2iwstat,r3iwstat,r4iwstat,r5iwstat,r6iwstat,r7iwstat,r8iwstat,r9iwstat,r10iwstat,r11iwstat,r12iwstat,r13iwstat,r14iwstat,r15iwstat,r16iwstat,
                        # Interview midpoint date
-                       r1iwmid,r2iwmid,r3iwmid,r4iwmid,r5iwmid,r6iwmid,r7iwmid,r8iwmid,r9iwmid,r10iwmid,r11iwmid,r12iwmid,r13iwmid,r14iwmid,r15iwmid,
+                       r1iwmid,r2iwmid,r3iwmid,r4iwmid,r5iwmid,r6iwmid,r7iwmid,r8iwmid,r9iwmid,r10iwmid,r11iwmid,r12iwmid,r13iwmid,r14iwmid,r15iwmid,r16iwmid,
                        # Age in years at interview month
-                       r1agey_e,r2agey_e,r3agey_e,r4agey_e,r5agey_e,r6agey_e,r7agey_e,r8agey_e,r9agey_e,r10agey_e,r11agey_e,r12agey_e,r13agey_e,r14agey_e,r15agey_e,
+                       r1agey_e,r2agey_e,r3agey_e,r4agey_e,r5agey_e,r6agey_e,r7agey_e,r8agey_e,r9agey_e,r10agey_e,r11agey_e,r12agey_e,r13agey_e,r14agey_e,r15agey_e,r16agey_e,
                        # Sum of ADL responses
-                       r2adl5a,r3adl5a,r4adl5a,r5adl5a,r6adl5a,r7adl5a,r8adl5a,r9adl5a,r10adl5a,r11adl5a,r12adl5a,r13adl5a,r14adl5a,r15adl5a,
+                       r2adl5a,r3adl5a,r4adl5a,r5adl5a,r6adl5a,r7adl5a,r8adl5a,r9adl5a,r10adl5a,r11adl5a,r12adl5a,r13adl5a,r14adl5a,r15adl5a,r16adl5a,
                        # Sum of IADL responses
-                       r2iadl5a,r3iadl5a,r4iadl5a,r5iadl5a,r6iadl5a,r7iadl5a,r8iadl5a,r9iadl5a,r10iadl5a,r11iadl5a,r12iadl5a,r13iadl5a,r14iadl5a,r15iadl5a,
+                       r2iadl5a,r3iadl5a,r4iadl5a,r5iadl5a,r6iadl5a,r7iadl5a,r8iadl5a,r9iadl5a,r10iadl5a,r11iadl5a,r12iadl5a,r13iadl5a,r14iadl5a,r15iadl5a,r16iadl5a,
                        # Self reported health (1 = excellent, 5=very bad)
-                       r1shlt,r2shlt,r3shlt,r4shlt,r5shlt,r6shlt,r7shlt,r8shlt,r9shlt,r10shlt,r11shlt,r12shlt,r13shlt,r14shlt,r15shlt,
+                       r1shlt,r2shlt,r3shlt,r4shlt,r5shlt,r6shlt,r7shlt,r8shlt,r9shlt,r10shlt,r11shlt,r12shlt,r13shlt,r14shlt,r15shlt,r16shlt,
                        # Doctor diagnosed high blood pressure
-                       r1hibp,r2hibp,r3hibp,r4hibp,r5hibp,r6hibp,r7hibp,r8hibp,r9hibp,r10hibp,r11hibp,r12hibp,r13hibp,r14hibp,r15hibp,
+                       r1hibp,r2hibp,r3hibp,r4hibp,r5hibp,r6hibp,r7hibp,r8hibp,r9hibp,r10hibp,r11hibp,r12hibp,r13hibp,r14hibp,r15hibp,r16hibp,
                        # Diabetes
-                       r1diab,r2diab,r3diab,r4diab,r5diab,r6diab,r7diab,r8diab,r9diab,r10diab,r11diab,r12diab,r13diab,r14diab,r15diab,
+                       r1diab,r2diab,r3diab,r4diab,r5diab,r6diab,r7diab,r8diab,r9diab,r10diab,r11diab,r12diab,r13diab,r14diab,r15diab,r16diab,
                        # Cancer
-                       r1cancr,r2cancr,r3cancr,r4cancr,r5cancr,r6cancr,r7cancr,r8cancr,r9cancr,r10cancr,r11cancr,r12cancr,r13cancr,r14cancr,r15cancr,
-                       # # Cancer ever
-                       r1cancre,r2cancre,r3cancre,r4cancre,r5cancre,r6cancre,r7cancre,r8cancre,r9cancre,r10cancre,r11cancre,r12cancre,r13cancre,r14cancre,r15cancre,
+                       r1cancr,r2cancr,r3cancr,r4cancr,r5cancr,r6cancr,r7cancr,r8cancr,r9cancr,r10cancr,r11cancr,r12cancr,r13cancr,r14cancr,r15cancr,r16cancr,
+                       # Cancer ever
+                       r1cancre,r2cancre,r3cancre,r4cancre,r5cancre,r6cancre,r7cancre,r8cancre,r9cancre,r10cancre,r11cancre,r12cancre,r13cancre,r14cancre,r15cancre,r16cancre,
                        # Lung disease
-                       r1lung,r2lung,r3lung,r4lung,r5lung,r6lung,r7lung,r8lung,r9lung,r10lung,r11lung,r12lung,r13lung,r14lung,r15lung,
+                       r1lung,r2lung,r3lung,r4lung,r5lung,r6lung,r7lung,r8lung,r9lung,r10lung,r11lung,r12lung,r13lung,r14lung,r15lung,r16lung,
                        # Heart problems
-                       r1heart,r2heart,r3heart,r4heart,r5heart,r6heart,r7heart,r8heart,r9heart,r10heart,r11heart,r12heart,r13heart,r14heart,r15heart,
+                       r1heart,r2heart,r3heart,r4heart,r5heart,r6heart,r7heart,r8heart,r9heart,r10heart,r11heart,r12heart,r13heart,r14heart,r15heart,r16heart,
                        # Stroke 
-                       r1strok,r2strok,r3strok,r4strok,r5strok,r6strok,r7strok,r8strok,r9strok,r10strok,r11strok,r12strok,r13strok,r14strok,r15strok,
+                       r1strok,r2strok,r3strok,r4strok,r5strok,r6strok,r7strok,r8strok,r9strok,r10strok,r11strok,r12strok,r13strok,r14strok,r15strok,r16strok,
                        # Psychatric problems
-                       r1psych,r2psych,r3psych,r4psych,r5psych,r6psych,r7psych,r8psych,r9psych,r10psych,r11psych,r12psych,r13psych,r14psych,r15psych,
+                       r1psych,r2psych,r3psych,r4psych,r5psych,r6psych,r7psych,r8psych,r9psych,r10psych,r11psych,r12psych,r13psych,r14psych,r15psych,r16psych,
                        # Arthritis
-                       r1arthr,r2arthr,r3arthr,r4arthr,r5arthr,r6arthr,r7arthr,r8arthr,r9arthr,r10arthr,r11arthr,r12arthr,r13arthr,r14arthr,r15arthr,
+                       r1arthr,r2arthr,r3arthr,r4arthr,r5arthr,r6arthr,r7arthr,r8arthr,r9arthr,r10arthr,r11arthr,r12arthr,r13arthr,r14arthr,r15arthr,r16arthr,
                        # Smokes now
-                       r1smoken,r2smoken,r3smoken,r4smoken,r5smoken,r6smoken,r7smoken,r8smoken,r9smoken,r10smoken,r11smoken,r12smoken,r13smoken,r14smoken,r15smoken,
+                       r1smoken,r2smoken,r3smoken,r4smoken,r5smoken,r6smoken,r7smoken,r8smoken,r9smoken,r10smoken,r11smoken,r12smoken,r13smoken,r14smoken,r15smoken,r16smoken,
                        # Ever smoked
-                       r1smokev,r2smokev,r3smokev,r4smokev,r5smokev,r6smokev,r7smokev,r8smokev,r9smokev,r10smokev,r11smokev,r12smokev,r13smokev,r14smokev,r15smokev,
+                       r1smokev,r2smokev,r3smokev,r4smokev,r5smokev,r6smokev,r7smokev,r8smokev,r9smokev,r10smokev,r11smokev,r12smokev,r13smokev,r14smokev,r15smokev,r16smokev,
                        # Labor force status
-                       r1lbrf,r2lbrf,r3lbrf,r4lbrf,r5lbrf,r6lbrf,r7lbrf,r8lbrf,r9lbrf,r10lbrf,r11lbrf,r12lbrf,r13lbrf,r14lbrf,r15lbrf,
+                       r1lbrf,r2lbrf,r3lbrf,r4lbrf,r5lbrf,r6lbrf,r7lbrf,r8lbrf,r9lbrf,r10lbrf,r11lbrf,r12lbrf,r13lbrf,r14lbrf,r15lbrf,r16lbrf,
                        # CESD score (mental health)
-                       r2cesd,r3cesd,r4cesd,r5cesd,r6cesd,r7cesd,r8cesd,r9cesd,r10cesd,r11cesd,r12cesd,r13cesd,r14cesd,r15cesd,
+                       r2cesd,r3cesd,r4cesd,r5cesd,r6cesd,r7cesd,r8cesd,r9cesd,r10cesd,r11cesd,r12cesd,r13cesd,r14cesd,r15cesd,r16cesd,
                        # Marital Status
-                       r1mstat,r2mstat,r3mstat,r4mstat,r5mstat,r6mstat,r7mstat,r8mstat,r9mstat,r10mstat,r11mstat,r12mstat,r13mstat,r14mstat,r15mstat,
+                       r1mstat,r2mstat,r3mstat,r4mstat,r5mstat,r6mstat,r7mstat,r8mstat,r9mstat,r10mstat,r11mstat,r12mstat,r13mstat,r14mstat,r15mstat,r16mstat,
                        # BMI
-                       r1bmi,r2bmi,r3bmi,r4bmi,r5bmi,r6bmi,r7bmi,r8bmi,r9bmi,r10bmi,r11bmi,r12bmi,r13bmi,r14bmi,r15bmi,
+                       r1bmi,r2bmi,r3bmi,r4bmi,r5bmi,r6bmi,r7bmi,r8bmi,r9bmi,r10bmi,r11bmi,r12bmi,r13bmi,r14bmi,r15bmi,r16bmi,
                        # Light Physical Activity
-                       r7ltactx,r8ltactx,r9ltactx,r10ltactx,r11ltactx,r12ltactx,r13ltactx,r14ltactx,r15ltactx)
+                       r7ltactx,r8ltactx,r9ltactx,r10ltactx,r11ltactx,r12ltactx,r13ltactx,r14ltactx,r15ltactx,r16ltactx)
 
   
 ### Education, race, gender ####################################################
@@ -105,11 +105,11 @@
 ### Rename vars for easier reshaping below #####################################
   
   # Get names of time varying variables consistent
-  hrs <- hrs |> rename_with(~paste0("r",1:15,"inw"),starts_with("inw"))
-  hrs <- hrs |> rename_with(~paste0("r",2:15,"iadl"),ends_with("iadl5a"))
-  hrs <- hrs |> rename_with(~paste0("r",2:15,"adl"),ends_with("adl5a"))
-  hrs <- hrs |> rename_with(~paste0("r",1:15,"age"),ends_with("agey_e"))
-  hrs <- hrs |> rename_with(~paste0("r",7:15,"ltact"),ends_with("ltactx"))
+  hrs <- hrs |> rename_with(~paste0("r",1:16,"inw"),starts_with("inw"))
+  hrs <- hrs |> rename_with(~paste0("r",2:16,"iadl"),ends_with("iadl5a"))
+  hrs <- hrs |> rename_with(~paste0("r",2:16,"adl"),ends_with("adl5a"))
+  hrs <- hrs |> rename_with(~paste0("r",1:16,"age"),ends_with("agey_e"))
+  hrs <- hrs |> rename_with(~paste0("r",7:16,"ltact"),ends_with("ltactx"))
   
   # Change name format of time varying variables (not a good solution, but works)
   hrsnames <- str_split_fixed(names(hrs),"r[[:digit:]]{1,2}",2)
@@ -137,7 +137,7 @@
   repvars <- grepl("_",names(hrs))   
   repvars <- names(hrs)[repvars]
   repvars <- unique(unlist(lapply(strsplit(repvars,split="_"),function(x)x[1])))
-  repvars <- paste(rep(repvars, each = length(1:15)), 1:15, sep = "_")
+  repvars <- paste(rep(repvars, each = length(1:16)), 1:16, sep = "_")
 
   # Reshape (pivot_longer is just not intuitive to me, sorry)
   hrs <- reshape(data=as.data.frame(hrs),
@@ -152,10 +152,37 @@
   hrs <- hrs |> arrange(hhidpn,wave)
 
   
+### Restrict to observed person years ##########################################
+  
+  # Drop people after death, and when not (yet) in wave
+  hrs <- hrs |> filter(iwstat%in%c(1,5))
+  
+  
 ### Variables: age/birth cohort/state pension age ##############################
 
   # Age is missing in the year of death, ad
   hrs <- hrs |> mutate(age=ifelse(iwstat==5,radyear-rabyear,age))
+  
+  # If year of death is not known: year of wave
+  hrs <- hrs |> mutate(waveyear=case_match(wave,
+                                           1~1992,
+                                           2~1994,
+                                           3~1996,
+                                           4~1998,
+                                           5~2000,
+                                           6~2002,
+                                           7~2004,
+                                           8~2006,
+                                           9~2008,
+                                          10~2010, 
+                                          11~2012, 
+                                          12~2014,
+                                          13~2016, 
+                                          14~2018,
+                                          15~2020, 
+                                          16~2022))
+  
+  hrs <- hrs |> mutate(age=ifelse(iwstat==5 & is.na(age),waveyear-rabyear,age))
   
   # Cohort & pension age
   hrs <- hrs |> mutate(birth_coh=ifelse(rabyear<=1942,"1942",
@@ -425,9 +452,6 @@
   
 ### Dropping observations ######################################################  
   
-  # Drop people after death, and when not (yet) in wave
-  hrs <- hrs |> filter(iwstat%in%c(1,5))
-  
   # Restrict to waves after 2000
   hrs <- hrs |> filter(wave>=5)
   
@@ -442,7 +466,10 @@
   
   # Drop if key health variables missing
   hrs <- hrs |> filter( (!is.na(smkd) & !is.na(pla3) & !is.na(mix6) & iwstat==1)|iwstat==5)
-
+  
+  # Drop if race/ethnicity = "Other" (few person years, heterogeneous group)
+  hrs <- hrs |> filter(race!="Other")
+  
   
 ### Saving #####################################################################
 
