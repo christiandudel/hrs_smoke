@@ -2,12 +2,6 @@
 
   library(dtms)
   library(tidyverse)
-  #library(parallel)
-  #library(haven)
-  #library(foreach)
-  #library(doParallel)
-  #library(data.table)
-  #'%ni%'<-Negate('%in%')
 
   
 ### Load data ##################################################################
@@ -33,12 +27,9 @@
   
 ### Define dtms ################################################################  
 
-  # Transient states
-  transientstates <- c("working/healthy","not working/healthy",
-                       "working/unhealthy","not working/unhealthy")
-  
   # dtms
-  hrsdtms <- dtms(transient=transientstates,
+  hrsdtms <- dtms(transient=c("working/healthy","not working/healthy",
+                              "working/unhealthy","not working/unhealthy"),
                   absorbing="dead",
                   timescale=seq(50,98,1),
                   timestep=1:3)
@@ -122,9 +113,10 @@
   
   # Timescale
   timescale <- seq(50,98,2)
-  
+
   # dtms
-  hrspredict <- dtms(transient=transientstates,
+  hrspredict <- dtms(transient=c("working/healthy","not working/healthy",
+                                 "working/unhealthy","not working/unhealthy"),
                      absorbing="dead",
                      timescale=timescale)
   
@@ -715,96 +707,97 @@
   
 ### Table 1 ####################################################################
   
-  table1 <- matrix(data=NA,ncol=9,nrow=7)
+  restable <- matrix(data=NA,ncol=9,nrow=7)
   
-  colnames(table1) <- c("HWLE/Total","UWLE/Total","LE/Total",
+  colnames(restable) <- c("HWLE/Total","UWLE/Total","LE/Total",
                         "HWLE/Men","UWLE/Men","LE/Men",
                         "HWLE/Women","UWLE/Women","LE/Women")
   
-  rownames(table1) <- c("Never smokers","Former smokers","Current smokers",
+  rownames(restable) <- c("Never smokers","Former smokers","Current smokers",
                        "Effect former (unadjusted)","Effect current (unadjusted)",
                        "Effect former (adjusted)","Effect current (adjusted)")
   
   # Non-smokers levels
-  table1[1,1] <- hwle_ns["AVERAGE","working/healthy"]
-  table1[1,2] <- hwle_ns["AVERAGE","working/unhealthy"]
-  table1[1,3] <- hwle_ns["AVERAGE","TOTAL"]
-  table1[1,4] <- hwle_m_ns["AVERAGE","working/healthy"]
-  table1[1,5] <- hwle_m_ns["AVERAGE","working/unhealthy"]
-  table1[1,6] <- hwle_m_ns["AVERAGE","TOTAL"]
-  table1[1,7] <- hwle_w_ns["AVERAGE","working/healthy"]
-  table1[1,8] <- hwle_w_ns["AVERAGE","working/unhealthy"]
-  table1[1,9] <- hwle_w_ns["AVERAGE","TOTAL"]
+  restable[1,1] <- hwle_ns["AVERAGE","working/healthy"]
+  restable[1,2] <- hwle_ns["AVERAGE","working/unhealthy"]
+  restable[1,3] <- hwle_ns["AVERAGE","TOTAL"]
+  restable[1,4] <- hwle_m_ns["AVERAGE","working/healthy"]
+  restable[1,5] <- hwle_m_ns["AVERAGE","working/unhealthy"]
+  restable[1,6] <- hwle_m_ns["AVERAGE","TOTAL"]
+  restable[1,7] <- hwle_w_ns["AVERAGE","working/healthy"]
+  restable[1,8] <- hwle_w_ns["AVERAGE","working/unhealthy"]
+  restable[1,9] <- hwle_w_ns["AVERAGE","TOTAL"]
   
   # Former smokers, levels
-  table1[2,1] <- hwle_ex["AVERAGE","working/healthy"]
-  table1[2,2] <- hwle_ex["AVERAGE","working/unhealthy"]
-  table1[2,3] <- hwle_ex["AVERAGE","TOTAL"]
-  table1[2,4] <- hwle_m_ex["AVERAGE","working/healthy"]
-  table1[2,5] <- hwle_m_ex["AVERAGE","working/unhealthy"]
-  table1[2,6] <- hwle_m_ex["AVERAGE","TOTAL"]
-  table1[2,7] <- hwle_w_ex["AVERAGE","working/healthy"]
-  table1[2,8] <- hwle_w_ex["AVERAGE","working/unhealthy"]
-  table1[2,9] <- hwle_w_ex["AVERAGE","TOTAL"]
+  restable[2,1] <- hwle_ex["AVERAGE","working/healthy"]
+  restable[2,2] <- hwle_ex["AVERAGE","working/unhealthy"]
+  restable[2,3] <- hwle_ex["AVERAGE","TOTAL"]
+  restable[2,4] <- hwle_m_ex["AVERAGE","working/healthy"]
+  restable[2,5] <- hwle_m_ex["AVERAGE","working/unhealthy"]
+  restable[2,6] <- hwle_m_ex["AVERAGE","TOTAL"]
+  restable[2,7] <- hwle_w_ex["AVERAGE","working/healthy"]
+  restable[2,8] <- hwle_w_ex["AVERAGE","working/unhealthy"]
+  restable[2,9] <- hwle_w_ex["AVERAGE","TOTAL"]
   
   # Current smokers, levels
-  table1[3,1] <- hwle_sm["AVERAGE","working/healthy"]
-  table1[3,2] <- hwle_sm["AVERAGE","working/unhealthy"]
-  table1[3,3] <- hwle_sm["AVERAGE","TOTAL"]
-  table1[3,4] <- hwle_m_sm["AVERAGE","working/healthy"]
-  table1[3,5] <- hwle_m_sm["AVERAGE","working/unhealthy"]
-  table1[3,6] <- hwle_m_sm["AVERAGE","TOTAL"]
-  table1[3,7] <- hwle_w_sm["AVERAGE","working/healthy"]
-  table1[3,8] <- hwle_w_sm["AVERAGE","working/unhealthy"]
-  table1[3,9] <- hwle_w_sm["AVERAGE","TOTAL"]
+  restable[3,1] <- hwle_sm["AVERAGE","working/healthy"]
+  restable[3,2] <- hwle_sm["AVERAGE","working/unhealthy"]
+  restable[3,3] <- hwle_sm["AVERAGE","TOTAL"]
+  restable[3,4] <- hwle_m_sm["AVERAGE","working/healthy"]
+  restable[3,5] <- hwle_m_sm["AVERAGE","working/unhealthy"]
+  restable[3,6] <- hwle_m_sm["AVERAGE","TOTAL"]
+  restable[3,7] <- hwle_w_sm["AVERAGE","working/healthy"]
+  restable[3,8] <- hwle_w_sm["AVERAGE","working/unhealthy"]
+  restable[3,9] <- hwle_w_sm["AVERAGE","TOTAL"]
   
   # Former smokers effects (unadjusted)
-  table1[4,1] <- unadjusted_ex["AVERAGE","working/healthy"]
-  table1[4,2] <- unadjusted_ex["AVERAGE","working/unhealthy"]
-  table1[4,3] <- unadjusted_ex["AVERAGE","TOTAL"]
-  table1[4,4] <- unadjusted_m_ex["AVERAGE","working/healthy"]
-  table1[4,5] <- unadjusted_m_ex["AVERAGE","working/unhealthy"]
-  table1[4,6] <- unadjusted_m_ex["AVERAGE","TOTAL"]
-  table1[4,7] <- unadjusted_w_ex["AVERAGE","working/healthy"]
-  table1[4,8] <- unadjusted_w_ex["AVERAGE","working/unhealthy"]
-  table1[4,9] <- unadjusted_w_ex["AVERAGE","TOTAL"]
+  restable[4,1] <- unadjusted_ex["AVERAGE","working/healthy"]
+  restable[4,2] <- unadjusted_ex["AVERAGE","working/unhealthy"]
+  restable[4,3] <- unadjusted_ex["AVERAGE","TOTAL"]
+  restable[4,4] <- unadjusted_m_ex["AVERAGE","working/healthy"]
+  restable[4,5] <- unadjusted_m_ex["AVERAGE","working/unhealthy"]
+  restable[4,6] <- unadjusted_m_ex["AVERAGE","TOTAL"]
+  restable[4,7] <- unadjusted_w_ex["AVERAGE","working/healthy"]
+  restable[4,8] <- unadjusted_w_ex["AVERAGE","working/unhealthy"]
+  restable[4,9] <- unadjusted_w_ex["AVERAGE","TOTAL"]
   
   # Current smokers effects (unadjusted)
-  table1[5,1] <- unadjusted_sm["AVERAGE","working/healthy"]
-  table1[5,2] <- unadjusted_sm["AVERAGE","working/unhealthy"]
-  table1[5,3] <- unadjusted_sm["AVERAGE","TOTAL"]
-  table1[5,4] <- unadjusted_m_sm["AVERAGE","working/healthy"]
-  table1[5,5] <- unadjusted_m_sm["AVERAGE","working/unhealthy"]
-  table1[5,6] <- unadjusted_m_sm["AVERAGE","TOTAL"]
-  table1[5,7] <- unadjusted_w_sm["AVERAGE","working/healthy"]
-  table1[5,8] <- unadjusted_w_sm["AVERAGE","working/unhealthy"]
-  table1[5,9] <- unadjusted_w_sm["AVERAGE","TOTAL"]
+  restable[5,1] <- unadjusted_sm["AVERAGE","working/healthy"]
+  restable[5,2] <- unadjusted_sm["AVERAGE","working/unhealthy"]
+  restable[5,3] <- unadjusted_sm["AVERAGE","TOTAL"]
+  restable[5,4] <- unadjusted_m_sm["AVERAGE","working/healthy"]
+  restable[5,5] <- unadjusted_m_sm["AVERAGE","working/unhealthy"]
+  restable[5,6] <- unadjusted_m_sm["AVERAGE","TOTAL"]
+  restable[5,7] <- unadjusted_w_sm["AVERAGE","working/healthy"]
+  restable[5,8] <- unadjusted_w_sm["AVERAGE","working/unhealthy"]
+  restable[5,9] <- unadjusted_w_sm["AVERAGE","TOTAL"]
   
   # Former smokers effects (adjusted)
-  table1[6,1] <- adjusted_ex["AVERAGE","working/healthy"]
-  table1[6,2] <- adjusted_ex["AVERAGE","working/unhealthy"]
-  table1[6,3] <- adjusted_ex["AVERAGE","TOTAL"]
-  table1[6,4] <- adjusted_m_ex["AVERAGE","working/healthy"]
-  table1[6,5] <- adjusted_m_ex["AVERAGE","working/unhealthy"]
-  table1[6,6] <- adjusted_m_ex["AVERAGE","TOTAL"]
-  table1[6,7] <- adjusted_w_ex["AVERAGE","working/healthy"]
-  table1[6,8] <- adjusted_w_ex["AVERAGE","working/unhealthy"]
-  table1[6,9] <- adjusted_w_ex["AVERAGE","TOTAL"]
+  restable[6,1] <- adjusted_ex["AVERAGE","working/healthy"]
+  restable[6,2] <- adjusted_ex["AVERAGE","working/unhealthy"]
+  restable[6,3] <- adjusted_ex["AVERAGE","TOTAL"]
+  restable[6,4] <- adjusted_m_ex["AVERAGE","working/healthy"]
+  restable[6,5] <- adjusted_m_ex["AVERAGE","working/unhealthy"]
+  restable[6,6] <- adjusted_m_ex["AVERAGE","TOTAL"]
+  restable[6,7] <- adjusted_w_ex["AVERAGE","working/healthy"]
+  restable[6,8] <- adjusted_w_ex["AVERAGE","working/unhealthy"]
+  restable[6,9] <- adjusted_w_ex["AVERAGE","TOTAL"]
   
   # Smokers effects (adjusted)
-  table1[7,1] <- adjusted_sm["AVERAGE","working/healthy"]
-  table1[7,2] <- adjusted_sm["AVERAGE","working/unhealthy"]
-  table1[7,3] <- adjusted_sm["AVERAGE","TOTAL"]
-  table1[7,4] <- adjusted_m_sm["AVERAGE","working/healthy"]
-  table1[7,5] <- adjusted_m_sm["AVERAGE","working/unhealthy"]
-  table1[7,6] <- adjusted_m_sm["AVERAGE","TOTAL"]
-  table1[7,7] <- adjusted_w_sm["AVERAGE","working/healthy"]
-  table1[7,8] <- adjusted_w_sm["AVERAGE","working/unhealthy"]
-  table1[7,9] <- adjusted_w_sm["AVERAGE","TOTAL"]
+  restable[7,1] <- adjusted_sm["AVERAGE","working/healthy"]
+  restable[7,2] <- adjusted_sm["AVERAGE","working/unhealthy"]
+  restable[7,3] <- adjusted_sm["AVERAGE","TOTAL"]
+  restable[7,4] <- adjusted_m_sm["AVERAGE","working/healthy"]
+  restable[7,5] <- adjusted_m_sm["AVERAGE","working/unhealthy"]
+  restable[7,6] <- adjusted_m_sm["AVERAGE","TOTAL"]
+  restable[7,7] <- adjusted_w_sm["AVERAGE","working/healthy"]
+  restable[7,8] <- adjusted_w_sm["AVERAGE","working/unhealthy"]
+  restable[7,9] <- adjusted_w_sm["AVERAGE","TOTAL"]
+  
   
 ### Save selected results ######################################################  
   
-  savelist <- c("table1","hwle_ns","hwle_ex","hwle_sm",
+  savelist <- c("restable","hwle_ns","hwle_ex","hwle_sm",
                 "hwle_m_ns","hwle_m_ex","hwle_m_sm",
                 "hwle_w_ns","hwle_w_ex","hwle_w_sm",
                 "unadjusted_ex","unadjusted_sm",

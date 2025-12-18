@@ -2,8 +2,6 @@
 
   library(readstata13)
   require(tidyverse)
-  library(haven)
-  library(dplyr)
   library(readr)
   library(dtms)
 
@@ -473,4 +471,4 @@
   
 ### Saving #####################################################################
 
-  save(hrs,file=paste0("Data/long_hrs50.Rdata"))
+  save(hrs,file="Data/long_hrs50.Rdata")
