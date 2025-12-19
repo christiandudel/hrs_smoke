@@ -34,3 +34,8 @@
   # Difference
   difference <- newtable-restable
   
+  
+### Save #######################################################################
+  
+  save(difference,file="Results/robustness_COVID.Rda")
+  
