@@ -33,7 +33,7 @@
                        fun=bootfun,
                        method="block",
                        parallel=TRUE,
-                       rep=250,
+                       rep=1000,
                        cores=5,
                        .packages=c("VGAM","dtms","tidyverse"))
   
