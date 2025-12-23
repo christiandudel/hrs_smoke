@@ -228,18 +228,18 @@
   
 ### Variables: health, smoking related #########################################  
 
-  # Smoking-related diseases (1=cancr | lung | heart | stroke| diab)
-  hrs <- hrs |> mutate(smkd=ifelse(cancr==1 | lung==1 | heart==1 | strok==1 | diab==1,
+  # Smoking-related diseases 
+  hrs <- hrs |> mutate(smk6=ifelse(cancr==1 | lung==1 | heart==1 | strok==1 | diab==1 | arthr==1,
                                    1, # 1=smoking related diseases
                                    0))# 0=no smoking related diseases
   
-  # Non-smoking related diseases
-  hrs <- hrs |> mutate(pla3=ifelse(hibp==1 | psych==1 | arthr==1,
+  # Non-smoking related disease
+  hrs <- hrs |> mutate(pla1=ifelse(hibp==1,
                                    1, #1=any non-smoking related diseases
                                    0))#0=no non-smoking related diseases
   
-  # "mixed" diseases, moderate or unclear association with smoking
-  hrs <- hrs |> mutate(mix6=ifelse(lung==1 | cancr==1 | heart==1 | strok==1 | diab==1 | hibp==1,
+  # Direction of association likely reversed
+  hrs <- hrs |> mutate(mix1=ifelse(psych==1,
                                    1, # Any
                                    0))# None
   
@@ -250,9 +250,9 @@
   hrs <- hrs |> mutate(cancre=ifelse(cancre==1,1,0))
   
   # Carry forward: ever reported
-  hrs <- dtms_forward(data=hrs,statevar="smkd",idvar="hhidpn",timevar="wave",state=1)
-  hrs <- dtms_forward(data=hrs,statevar="pla3",idvar="hhidpn",timevar="wave",state=1)
-  hrs <- dtms_forward(data=hrs,statevar="mix6",idvar="hhidpn",timevar="wave",state=1)
+  hrs <- dtms_forward(data=hrs,statevar="smk6",idvar="hhidpn",timevar="wave",state=1)
+  hrs <- dtms_forward(data=hrs,statevar="pla1",idvar="hhidpn",timevar="wave",state=1)
+  hrs <- dtms_forward(data=hrs,statevar="mix1",idvar="hhidpn",timevar="wave",state=1)
   hrs <- dtms_forward(data=hrs,statevar="cancr",idvar="hhidpn",timevar="wave",state=1)
   hrs <- dtms_forward(data=hrs,statevar="cancre",idvar="hhidpn",timevar="wave",state=1)
   
@@ -275,30 +275,30 @@
   
   # Work and Smoking-related diseases
   hrs <- hrs |> mutate(worksmkd=NA,
-                       worksmkd=ifelse(worksimple=="working" & smkd==0,"working/healthy",worksmkd),
-                       worksmkd=ifelse(worksimple=="working" & smkd==1,"working/unhealthy",worksmkd),
-                       worksmkd=ifelse(worksimple=="retired" & smkd==0,"retired/healthy",worksmkd),
-                       worksmkd=ifelse(worksimple=="retired" & smkd==1,"retired/unhealthy",worksmkd),
-                       worksmkd=ifelse(worksimple=="not working" & smkd==0,"not working/healthy",worksmkd),
-                       worksmkd=ifelse(worksimple=="not working" & smkd==1,"not working/unhealthy",worksmkd))
+                       worksmkd=ifelse(worksimple=="working" & smk6==0,"working/healthy",worksmkd),
+                       worksmkd=ifelse(worksimple=="working" & smk6==1,"working/unhealthy",worksmkd),
+                       worksmkd=ifelse(worksimple=="retired" & smk6==0,"retired/healthy",worksmkd),
+                       worksmkd=ifelse(worksimple=="retired" & smk6==1,"retired/unhealthy",worksmkd),
+                       worksmkd=ifelse(worksimple=="not working" & smk6==0,"not working/healthy",worksmkd),
+                       worksmkd=ifelse(worksimple=="not working" & smk6==1,"not working/unhealthy",worksmkd))
   
   # Work and Placebo diseases
   hrs <- hrs |> mutate(workpla3=NA,
-                       workpla3=ifelse(worksimple=="working" & pla3==0,"working/healthy",workpla3),
-                       workpla3=ifelse(worksimple=="working" & pla3==1,"working/unhealthy",workpla3),
-                       workpla3=ifelse(worksimple=="retired" & pla3==0,"retired/healthy",workpla3),
-                       workpla3=ifelse(worksimple=="retired" & pla3==1,"retired/unhealthy",workpla3),
-                       workpla3=ifelse(worksimple=="not working" & pla3==0,"not working/healthy",workpla3),
-                       workpla3=ifelse(worksimple=="not working" & pla3==1,"not working/unhealthy",workpla3))
+                       workpla3=ifelse(worksimple=="working" & pla1==0,"working/healthy",workpla3),
+                       workpla3=ifelse(worksimple=="working" & pla1==1,"working/unhealthy",workpla3),
+                       workpla3=ifelse(worksimple=="retired" & pla1==0,"retired/healthy",workpla3),
+                       workpla3=ifelse(worksimple=="retired" & pla1==1,"retired/unhealthy",workpla3),
+                       workpla3=ifelse(worksimple=="not working" & pla1==0,"not working/healthy",workpla3),
+                       workpla3=ifelse(worksimple=="not working" & pla1==1,"not working/unhealthy",workpla3))
   
   # Work and Mixed Smoking diseases
   hrs <- hrs |> mutate(workmix6=NA,
-                       workmix6=ifelse(worksimple=="working" & mix6==0,"working/healthy",workmix6),
-                       workmix6=ifelse(worksimple=="working" & mix6==1,"working/unhealthy",workmix6),
-                       workmix6=ifelse(worksimple=="retired" & mix6==0,"retired/healthy",workmix6),
-                       workmix6=ifelse(worksimple=="retired" & mix6==1,"retired/unhealthy",workmix6),
-                       workmix6=ifelse(worksimple=="not working" & mix6==0,"not working/healthy",workmix6),
-                       workmix6=ifelse(worksimple=="not working" & mix6==1,"not working/unhealthy",workmix6))
+                       workmix6=ifelse(worksimple=="working" & mix1==0,"working/healthy",workmix6),
+                       workmix6=ifelse(worksimple=="working" & mix1==1,"working/unhealthy",workmix6),
+                       workmix6=ifelse(worksimple=="retired" & mix1==0,"retired/healthy",workmix6),
+                       workmix6=ifelse(worksimple=="retired" & mix1==1,"retired/unhealthy",workmix6),
+                       workmix6=ifelse(worksimple=="not working" & mix1==0,"not working/healthy",workmix6),
+                       workmix6=ifelse(worksimple=="not working" & mix1==1,"not working/unhealthy",workmix6))
   
   # Work and Cancer
   hrs <- hrs |> mutate(workcancr=NA,
@@ -463,7 +463,7 @@
   hrs <- hrs |> filter( (!is.na(workstatus) & iwstat==1) |iwstat==5)
   
   # Drop if key health variables missing
-  hrs <- hrs |> filter( (!is.na(smkd) & !is.na(pla3) & !is.na(mix6) & iwstat==1)|iwstat==5)
+  hrs <- hrs |> filter( (!is.na(smk6) & !is.na(pla1) & !is.na(mix1) & iwstat==1)|iwstat==5)
   
   # Drop if race/ethnicity = "Other" (few person years, heterogeneous group)
   hrs <- hrs |> filter(race!="Other")

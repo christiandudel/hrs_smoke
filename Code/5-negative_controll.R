@@ -4,6 +4,7 @@
   library(tidyverse)
   library(margins)
 
+
 ### Load data ##################################################################
 
   load("Data/long_hrs50.Rdata")
@@ -18,27 +19,30 @@
   hrs$gender <- factor(hrs$gender)
   hrs$smok3 <- factor(hrs$smok3)
   
+  # Lag smoking
+  hrs <- hrs |> group_by(hhidpn) |> mutate(lsmok=lag(smok3,order_by=age))
+  
   # Work outcomes
-  hrs$wrk <- as.numeric(hrs$workstatus=="working")
-  hrs$hwl <- as.numeric(hrs$state_smkd_sim=="working/healthy")
+  hrs$wrk <- as.numeric(!hrs$workstatus=="working")
+  hrs$hwl <- as.numeric(!hrs$state_smkd_sim=="working/healthy")
 
   
 ### Models #####################################################################
 
   # Smoking related
-  fit_out <- glm(smkd~smok3+education*race*gender+age+age2,data=hrs,family=binomial(link="logit"))
+  fit_out <- glm(smk6~lsmok+education*race*gender+age+age2,data=hrs,family=binomial(link="logit"))
 
   # Negative control
-  fit_nco <- glm(pla3~smok3+education*race*gender+age+age2,data=hrs,family=binomial(link="logit"))
+  fit_nco <- glm(pla1~lsmok+education*race*gender+age+age2,data=hrs,family=binomial(link="logit"))
   
   # In-between
-  fit_mix <- glm(mix6~smok3+education*race*gender+age+age2,data=hrs,family=binomial(link="logit"))
+  fit_mix <- glm(mix1~lsmok+education*race*gender+age+age2,data=hrs,family=binomial(link="logit"))
   
   # Work 
-  fit_wrk <- glm(wrk~smok3+education*race*gender+age+age2,data=hrs,family=binomial(link="logit"))
+  fit_wrk <- glm(wrk~lsmok+education*race*gender+age+age2,data=hrs,family=binomial(link="logit"))
   
   # Healthy work
-  fit_hwl <- glm(hwl~smok3+education*race*gender+age+age2,data=hrs,family=binomial(link="logit"))
+  fit_hwl <- glm(hwl~lsmok+education*race*gender+age+age2,data=hrs,family=binomial(link="logit"))
   
   
 ### Results ####################################################################
@@ -50,7 +54,7 @@
   ame_wrk <- margins(fit_wrk, type = "response",data=hrs)
   ame_hwl <- margins(fit_hwl, type = "response",data=hrs)
   
-  # Marginal effect link/odds
+  # Marginal effect link/odds (this is very lazy...)
   aml_out <- margins(fit_out, type = "link",data=hrs)
   aml_nco <- margins(fit_nco, type = "link",data=hrs)
   aml_mix <- margins(fit_mix, type = "link",data=hrs)
@@ -60,7 +64,7 @@
   
 ### Key results ################################################################
   
-  vars <- c("smok31","smok32")
+  vars <- c("lsmok1","lsmok2")
   
   # Prob
   ame_out <- summary(ame_out) |> filter(factor%in%vars) 

@@ -34,7 +34,7 @@
   adltable <- restable
   
   # Load reference
-  load("Results/tab1.Rds")
+  load("Results/main.Rda")
   
   # Difference
   difference <- adltable-restable
