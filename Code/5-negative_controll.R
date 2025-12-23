@@ -83,7 +83,7 @@
   
 ### Save #######################################################################  
   
-  save(list=c("ame_out","ame_nco","ame_mix","ame_wrk","ame_wrk",
+  save(list=c("ame_out","ame_nco","ame_mix","ame_wrk","ame_hwl",
               "res_out","res_nco","res_mix","res_wrk","res_hwl"),
        file="Results/nco.Rda")
   
